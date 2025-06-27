@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Statistiche Match</title>
+
+  <!-- ✅ Global styles for background and layout -->
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: url('./bg.png') no-repeat center center fixed;
+      background-size: cover;
+      font-family: sans-serif;
+    }
+
+    h1 {
+      text-align: center;
+      color: white;
+      text-shadow: 1px 1px 4px #000;
+    }
+
+    soccer-stats-list {
+      display: block;
+      max-width: 90%;
+      margin: 20px auto;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    @media (max-width: 768px) {
+      table {
+        font-size: 14px;
+      }
+
+      input, textarea {
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      button {
+        width: 100%;
+        margin: 10px 0;
+      }
+    }
+
+    @media (max-width: 480px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      thead {
+        display: none;
+      }
+
+      tr {
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        padding: 10px;
+        background: #fff;
+      }
+
+      td {
+        display: flex;
+        flex-direction: column;
+        padding: 5px 0;
+      }
+
+      td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+    }
+
+    .match-info {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px auto;
+      max-width: 90%;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    .match-info input {
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      flex: 1 1 200px;
+    }
+
+  </style>
+
+  <script type="module">
+    import { LitElement, html, css } from 'https://unpkg.com/lit@2.8.0/index.js?module';
+
+    class SoccerStatsList extends LitElement {
+      static properties = {
+        players: { type: Array }
+      };
+
+      constructor() {
+        super();
+        this.players = [
+          { name: 'Player 1', CW: 5, QBT: 3, QSTP: 10, QST: 2, Notes: 'Scrivi un commento...' },
+          { name: 'Player 2', CW: 7, QBT: 2, QSTP: 15, QST: 1, Notes: 'Scrivi un commento...' }
+        ];
+      }
+
+      static styles = css`
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        th, td {
+          border: 1px solid #ccc;
+          padding: 8px;
+        }
+        th {
+          background-color: #333;
+          color: white;
+        }
+        input, textarea {
+          padding: 6px;
+          font-size: 14px;
+        }
+        textarea {
+          resize: vertical;
+          min-height: 40px;
+        }
+        button {
+          margin-top: 10px;
+          margin-right: 10px;
+          padding: 8px 16px;
+          background-color: #333;
+          color: white;
+          border: none;
+          cursor: pointer;
+        }
+      `;
+
+      updatePlayer(index, field, value) {
+        const updated = [...this.players];
+        updated[index][field] = field === 'Notes' || field === 'name' ? value : Math.max(0, Number(value));
+        this.players = updated;
+      }
+
+      addPlayer() {
+        this.players = [...this.players, { name: '', CW: 0, QBT: 0, QSTP: 0, QST: 0, Notes: '' }];
+      }
+
+    exportCSV() {
+      const home = document.getElementById("homeTeam")?.value || "";
+      const guest = document.getElementById("guestTeam")?.value || "";
+      const date = document.getElementById("matchDate")?.value || "";
+      const location = document.getElementById("location")?.value || "";
+
+      const matchInfo = [
+        ["Squadra Casa", home],
+        ["Squadra Ospite", guest],
+        ["Data", date],
+        ["Luogo", location],
+        [],
+      ];
+
+      const headers = ['Nome', 'Contrasti Vinti', 'Passaggi Effettuati', 'Palle Perse', 'Goals', 'Note'];
+      const rows = this.players.map(p => [p.name, p.CW, p.QBT, p.QSTP, p.QST, p.Notes]);
+
+      const csvContent = [...matchInfo, headers, ...rows]
+        .map(e => e.join(","))
+        .join("\n");
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "statistiche_match.csv";
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+
+      render() {
+        return html`
+          <table>
+            <thead>
+              <tr>
+                <th>Nome Cognome</th>
+                <th>Contrasti Vinti</th>
+                <th>Passaggi Effettuati</th>
+                <th>Palle Perse</th>
+                <th>Goals</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${this.players.map((player, index) => html`
+                <tr>
+                  <td data-label="Nome Cognome"><input type="text" .value=${player.name} @input=${e => this.updatePlayer(index, 'name', e.target.value)}></td>
+                  <td data-label="Contrasti Vinti"><input type="number" .value=${player.CW} @input=${e => this.updatePlayer(index, 'CW', e.target.value)}></td>
+                  <td data-label="Passaggi Effettuati"><input type="number" .value=${player.QBT} @input=${e => this.updatePlayer(index, 'QBT', e.target.value)}></td>
+                  <td data-label="Palle Perse"><input type="number" .value=${player.QSTP} @input=${e => this.updatePlayer(index, 'QSTP', e.target.value)}></td>
+                  <td data-label="Goals"><input type="number" .value=${player.QST} @input=${e => this.updatePlayer(index, 'QST', e.target.value)}></td>
+                  <td data-label="Note">
+                    <textarea
+                      placeholder="Scrivi un commento..."
+                      .value=${player.Notes}
+                      @input=${e => this.updatePlayer(index, 'Notes', e.target.value)}
+                    ></textarea>
+                  </td>
+                </tr>
+              `)}
+            </tbody>
+          </table>
+          <button @click=${this.addPlayer}>Aggiungi un giocatore</button>
+          <button @click=${this.exportCSV}>Esporta</button>
+        `;
+      }
+    }
+
+    customElements.define('soccer-stats-list', SoccerStatsList);
+  </script>
+</head>
+<body>
+  <h1>Statistiche Match</h1>
+
+  <div class="match-info">
+    <input type="text" placeholder="Squadra Casa" id="homeTeam" />
+    <input type="text" placeholder="Squadra Ospite" id="guestTeam" />
+    <input type="date" id="matchDate" />
+    <input type="text" placeholder="Luogo" id="location" />
+  </div>
+
+  <soccer-stats-list></soccer-stats-list>
+</body>
+</html>
